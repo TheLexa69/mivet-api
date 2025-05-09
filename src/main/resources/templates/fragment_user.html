@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Fragmento Menu de Usuario</title>
+    <script src="src/main/resources/static/js/main.js" defer></script>
+</head>
+<body>
+<div id="user-menu" th:fragment="user-menu" onclick="
+document.getElementById('dropdown-menu-header').classList.toggle('d-none');
+document.getElementById('dropdown-menu-header').classList.toggle('d-flex');
+">
+
+    <img id="perfilFoto" th:src="@{${usuario.foto != null ? '/images/' + usuario.foto : '/images/avatar_base.jpg'}}"
+         alt="Foto Usuario" />
+    <div class="d-none justify-content-between flex-column" id="dropdown-menu-header">
+        <a th:href="@{'/usuarios/' + ${usuario.id} + '/dashboard'}" class="pt-3 w-100">Panel</a>
+        <a class="logout" th:href="@{/logout}">Cerrar sesión</a>
+    </div>
+</div>
+<div th:replace="fragments::javascript"/>
+</body>
+</html>
+
