@@ -1,5 +1,34 @@
-target/
 .idea
-*.iml
-.DS_Store
 .vscode
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Compilación
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Maven
+target/
+
+# Gradle
+.gradle/
+build/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos personales
+*.swp
+*.swo
+
+# Archivos de entorno
+.env
+*.local
