@@ -12,9 +12,6 @@ public class Protectora {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String nombre;
-
     @Column(unique = true)
     private String cif;
 
@@ -26,11 +23,17 @@ public class Protectora {
 
     private String direccion;
 
+    @Column(name = "img_url")
     private String logo;
 
     @OneToOne
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
+    private String facebook;
+    private String instagram;
+    private String tiktok;
+    private String linkedin;
 
     public Long getId() {
         return id;
@@ -38,14 +41,6 @@ public class Protectora {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
     }
 
     public String getCif() {
@@ -102,5 +97,37 @@ public class Protectora {
 
     public void setUsuario(Usuario usuario) {
         this.usuario = usuario;
+    }
+
+    public String getFacebook() {
+        return facebook;
+    }
+
+    public void setFacebook(String facebook) {
+        this.facebook = facebook;
+    }
+
+    public String getInstagram() {
+        return instagram;
+    }
+
+    public void setInstagram(String instagram) {
+        this.instagram = instagram;
+    }
+
+    public String getTiktok() {
+        return tiktok;
+    }
+
+    public void setTiktok(String tiktok) {
+        this.tiktok = tiktok;
+    }
+
+    public String getLinkedin() {
+        return linkedin;
+    }
+
+    public void setLinkedin(String linkedin) {
+        this.linkedin = linkedin;
     }
 }

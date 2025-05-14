@@ -15,6 +15,13 @@ public class ProtectoraDTO {
     private String logo;
     private Integer idUsuario;
 
+    private String facebook;
+    private String instagram;
+    private String tiktok;
+    private String linkedin;
+
+    // Getters y Setters
+
     public Long getId() {
         return id;
     }
@@ -85,5 +92,37 @@ public class ProtectoraDTO {
 
     public void setIdUsuario(Integer idUsuario) {
         this.idUsuario = idUsuario;
+    }
+
+    public String getFacebook() {
+        return facebook;
+    }
+
+    public void setFacebook(String facebook) {
+        this.facebook = facebook;
+    }
+
+    public String getInstagram() {
+        return instagram;
+    }
+
+    public void setInstagram(String instagram) {
+        this.instagram = instagram;
+    }
+
+    public String getTiktok() {
+        return tiktok;
+    }
+
+    public void setTiktok(String tiktok) {
+        this.tiktok = tiktok;
+    }
+
+    public String getLinkedin() {
+        return linkedin;
+    }
+
+    public void setLinkedin(String linkedin) {
+        this.linkedin = linkedin;
     }
 }
