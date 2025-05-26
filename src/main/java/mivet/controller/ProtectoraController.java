@@ -33,97 +33,107 @@ public class ProtectoraController {
 
     @GetMapping("/mascotas")
     public ResponseEntity<List<Mascota>> listarMascotasDeProtectora(@RequestHeader("Authorization") String token) {
-        if (!JwtUtil.isTokenValid(token)) {
-            System.out.println(JwtUtil.isTokenValid(token));
-            return ResponseEntity.status(401).build();
-        }
-        Long idProtectora = JwtUtil.extractUserId(token);
+        try {
+            validarProtectora(token); // Validar token y tipo de usuario
 
-        List<Mascota> mascotas = mascotaService.findByUsuarioId(idProtectora);
-        return ResponseEntity.ok(mascotas);
+            Long idProtectora = JwtUtil.extractUserId(token);
+            List<Mascota> mascotas = mascotaService.findByUsuarioId(idProtectora);
+            return ResponseEntity.ok(mascotas);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(null); // 403 Forbidden
+        }
     }
 
 
     @PostMapping("/mascotas")
     public ResponseEntity<Mascota> darDeAltaMascota(@RequestHeader("Authorization") String token,
                                                     @RequestBody MascotaDTO dto) {
-        Long idProtectora = JwtUtil.extractUserId(token);
+        try {
+            validarProtectora(token); // Validar token y tipo de usuario
 
-        Usuario usuario = new Usuario();
-        usuario.setId(Math.toIntExact(idProtectora));
+            Long idProtectora = JwtUtil.extractUserId(token);
+            Usuario usuario = new Usuario();
+            usuario.setId(Math.toIntExact(idProtectora));
 
-        Mascota nuevaMascota = new Mascota();
-        nuevaMascota.setNombre(dto.getNombre());
-        nuevaMascota.setRaza(dto.getRaza());
-        nuevaMascota.setTipo(dto.getTipo());
-        nuevaMascota.setFechaNac(dto.getFechaNac());
-        nuevaMascota.setDescripcion(dto.getDescripcion());
-        nuevaMascota.setUsuario(usuario);
+            Mascota nuevaMascota = new Mascota();
+            nuevaMascota.setNombre(dto.getNombre());
+            nuevaMascota.setRaza(dto.getRaza());
+            nuevaMascota.setTipo(dto.getTipo());
+            nuevaMascota.setFechaNac(dto.getFechaNac());
+            nuevaMascota.setDescripcion(dto.getDescripcion());
+            nuevaMascota.setUsuario(usuario);
 
-        Mascota guardada = mascotaService.guardar(nuevaMascota);
-        return ResponseEntity.ok(guardada);
+            Mascota guardada = mascotaService.guardar(nuevaMascota);
+            return ResponseEntity.ok(guardada);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(null); // 403 Forbidden
+        }
     }
 
     @PutMapping("/perfil")
     public ResponseEntity<?> actualizarPerfilProtectora(@RequestHeader("Authorization") String token,
                                                         @RequestBody ProtectoraDTO dto) {
-        if (!JwtUtil.isTokenValid(token)) {
-            return ResponseEntity.status(401).body("Token expirado o inválido");
+        try {
+            validarProtectora(token); // Validate token and user type
+
+            Long idUsuario = JwtUtil.extractUserId(token);
+            Optional<Protectora> optionalProtectora = protectoraService.findByUsuarioId(idUsuario.intValue());
+
+            // Retrieve the user from the database to avoid "detached entity"
+            Usuario usuario = usuarioService.findById(idUsuario)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            Protectora protectora;
+            if (optionalProtectora.isPresent()) {
+                protectora = optionalProtectora.get();
+            } else {
+                protectora = new Protectora();
+                protectora.setUsuario(usuario);
+            }
+
+            // Update fields
+            if (dto.getNombre() != null) {
+                usuario.setNombre(dto.getNombre());
+            }
+
+            if (dto.getCif() != null) protectora.setCif(dto.getCif());
+            if (dto.getTelefono() != null) protectora.setTelefono(dto.getTelefono());
+            if (dto.getWeb() != null) protectora.setWeb(dto.getWeb());
+            if (dto.getCodigoONG() != null) protectora.setCodigoONG(dto.getCodigoONG());
+            if (dto.getDireccion() != null) protectora.setDireccion(dto.getDireccion());
+            if (dto.getLogo() != null) protectora.setLogo(dto.getLogo());
+            if (dto.getFacebook() != null) protectora.setFacebook(dto.getFacebook());
+            if (dto.getInstagram() != null) protectora.setInstagram(dto.getInstagram());
+            if (dto.getTiktok() != null) protectora.setTiktok(dto.getTiktok());
+            if (dto.getLinkedin() != null) protectora.setLinkedin(dto.getLinkedin());
+
+            // Save changes
+            usuarioService.save(usuario);
+            protectoraService.save(protectora);
+
+            return ResponseEntity.ok("Perfil actualizado correctamente");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage()); // 403 Forbidden
         }
-
-        Long idUsuario = JwtUtil.extractUserId(token);
-        Optional<Protectora> optionalProtectora = protectoraService.findByUsuarioId(idUsuario.intValue());
-
-        // Recuperamos el usuario de la BDD para evitar "detached entity"
-        Usuario usuario = usuarioService.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        Protectora protectora;
-        if (optionalProtectora.isPresent()) {
-            protectora = optionalProtectora.get();
-        } else {
-            protectora = new Protectora();
-            protectora.setUsuario(usuario);
-        }
-
-        // Actualizamos los campos
-        if (dto.getNombre() != null) {
-            usuario.setNombre(dto.getNombre());
-        }
-
-        if (dto.getCif() != null) protectora.setCif(dto.getCif());
-        if (dto.getTelefono() != null) protectora.setTelefono(dto.getTelefono());
-        if (dto.getWeb() != null) protectora.setWeb(dto.getWeb());
-        if (dto.getCodigoONG() != null) protectora.setCodigoONG(dto.getCodigoONG());
-        if (dto.getDireccion() != null) protectora.setDireccion(dto.getDireccion());
-        if (dto.getLogo() != null) protectora.setLogo(dto.getLogo());
-        if (dto.getFacebook() != null) protectora.setFacebook(dto.getFacebook());
-        if (dto.getInstagram() != null) protectora.setInstagram(dto.getInstagram());
-        if (dto.getTiktok() != null) protectora.setTiktok(dto.getTiktok());
-        if (dto.getLinkedin() != null) protectora.setLinkedin(dto.getLinkedin());
-
-        // Guardamos los cambios
-        usuarioService.save(usuario);
-        protectoraService.save(protectora);
-
-        return ResponseEntity.ok("Perfil actualizado correctamente");
     }
 
     @GetMapping("/perfil")
     public ResponseEntity<ProtectoraDTO> obtenerPerfil(@RequestHeader("Authorization") String token) {
-        if (!JwtUtil.isTokenValid(token)) {
-            return ResponseEntity.status(401).build();
+        try {
+            validarProtectora(token); // Validar token y tipo de usuario
+
+            Long idUsuario = JwtUtil.extractUserId(token);
+            Optional<Protectora> optionalProtectora = protectoraService.findByUsuarioId(idUsuario.intValue());
+
+            if (optionalProtectora.isEmpty()) {
+                return ResponseEntity.status(404).build(); // 404 Not Found
+            }
+
+            ProtectoraDTO dto = convertToDTO(optionalProtectora.get());
+            return ResponseEntity.ok(dto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(null); // 403 Forbidden
         }
-
-        Long idUsuario = JwtUtil.extractUserId(token);
-        Optional<Protectora> optionalProtectora = protectoraService.findByUsuarioId(idUsuario.intValue());
-
-        if (optionalProtectora.isEmpty()) {
-            return ResponseEntity.status(404).build();
-        }
-
-        ProtectoraDTO dto = convertToDTO(optionalProtectora.get());
-        return ResponseEntity.ok(dto);
     }
 
     private ProtectoraDTO convertToDTO(Protectora protectora) {
@@ -148,4 +158,14 @@ public class ProtectoraController {
         return dto;
     }
 
+    private void validarProtectora(String token) {
+        if (!JwtUtil.isTokenValid(token)) {
+            throw new RuntimeException("Token expirado o inválido");
+        }
+
+        String tipoUsuario = JwtUtil.extractTipoUsuario(token);
+        if (!"protectora".equalsIgnoreCase(tipoUsuario)) {
+            throw new RuntimeException("No tiene permisos para acceder a este recurso");
+        }
+    }
 }

@@ -17,6 +17,10 @@ public class JwtUtil {
         return getClaims(token).get("rol", String.class);
     }
 
+    public static String extractTipoUsuario(String token) {
+        return getClaims(token).get("tipo_usuario", String.class);
+    }
+
     public static boolean isTokenValid(String token) {
         try {
             Claims claims = getClaims(token);
@@ -25,6 +29,7 @@ public class JwtUtil {
             System.err.println("Error: La firma del token no coincide. El token no es confiable.");
             return false;
         } catch (Exception e) {
+            System.out.println(token);
             e.printStackTrace(); // <-- imprime por qué falla
             return false;
         }
@@ -39,4 +44,14 @@ public class JwtUtil {
                 .getBody();
 
     }
+
+    public static void printTokenData(String token) {
+    try {
+        Claims claims = getClaims(token); // Usa el método existente en JwtUtil
+        System.out.println("Datos del token:");
+        claims.forEach((key, value) -> System.out.println(key + ": " + value));
+    } catch (Exception e) {
+        System.err.println("Error al decodificar el token: " + e.getMessage());
+    }
+}
 }

@@ -1,11 +1,13 @@
 package mivet.dto;
 
+import mivet.enums.Rol;
+
 public class UsuarioDTO {
     private Integer id;
     private String nombre;
     private String correo;
     private String tipoUsuario;
-    private String rol;
+    private Rol rol;
 
     public Integer getId() {
         return id;
@@ -39,11 +41,11 @@ public class UsuarioDTO {
         this.tipoUsuario = tipoUsuario;
     }
 
-    public String getRol() {
+    public Rol getRol() {
         return rol;
     }
 
-    public void setRol(String rol) {
+    public void setRol(Rol rol) {
         this.rol = rol;
     }
 }
