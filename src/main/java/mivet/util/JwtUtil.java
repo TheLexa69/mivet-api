@@ -18,8 +18,16 @@ public class JwtUtil {
     }
 
     public static String extractTipoUsuario(String token) {
-        return getClaims(token).get("tipo_usuario", String.class);
+        Claims claims = getClaims(token);
+        Object raw = claims.get("tipo_usuario"); // usa snake_case según tu JWT
+        System.out.println("Tipo de usuario extraído: " + raw);
+        if (raw == null) {
+            throw new RuntimeException("Campo 'tipo_usuario' no presente en el token");
+        }
+
+        return raw.toString();
     }
+
 
     public static boolean isTokenValid(String token) {
         try {
@@ -46,12 +54,12 @@ public class JwtUtil {
     }
 
     public static void printTokenData(String token) {
-    try {
-        Claims claims = getClaims(token); // Usa el método existente en JwtUtil
-        System.out.println("Datos del token:");
-        claims.forEach((key, value) -> System.out.println(key + ": " + value));
-    } catch (Exception e) {
-        System.err.println("Error al decodificar el token: " + e.getMessage());
+        try {
+            Claims claims = getClaims(token); // Usa el método existente en JwtUtil
+            System.out.println("Datos del token:");
+            claims.forEach((key, value) -> System.out.println(key + ": " + value));
+        } catch (Exception e) {
+            System.err.println("Error al decodificar el token: " + e.getMessage());
+        }
     }
-}
 }

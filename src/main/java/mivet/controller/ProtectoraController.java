@@ -118,7 +118,7 @@ public class ProtectoraController {
     }
 
     @GetMapping("/perfil")
-    public ResponseEntity<ProtectoraDTO> obtenerPerfil(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> obtenerPerfil(@RequestHeader("Authorization") String token) {
         try {
             validarProtectora(token); // Validar token y tipo de usuario
 
@@ -132,7 +132,7 @@ public class ProtectoraController {
             ProtectoraDTO dto = convertToDTO(optionalProtectora.get());
             return ResponseEntity.ok(dto);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(403).body(null); // 403 Forbidden
+            return ResponseEntity.status(403).body(e.getMessage()); // 403 Forbidden
         }
     }
 
@@ -159,13 +159,17 @@ public class ProtectoraController {
     }
 
     private void validarProtectora(String token) {
-        if (!JwtUtil.isTokenValid(token)) {
-            throw new RuntimeException("Token expirado o inválido");
-        }
+        try {
+            if (!JwtUtil.isTokenValid(token)) {
+                throw new RuntimeException("Token expirado o inválido");
+            }
 
-        String tipoUsuario = JwtUtil.extractTipoUsuario(token);
-        if (!"protectora".equalsIgnoreCase(tipoUsuario)) {
-            throw new RuntimeException("No tiene permisos para acceder a este recurso");
+            String tipoUsuario = JwtUtil.extractTipoUsuario(token);
+            if (!"protectora".equalsIgnoreCase(tipoUsuario)) {
+                throw new RuntimeException("No tiene permisos para acceder a este recurso");
+            }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            throw new RuntimeException("Token expirado", e);
         }
     }
 }

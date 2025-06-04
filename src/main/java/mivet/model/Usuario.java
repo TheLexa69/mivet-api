@@ -3,6 +3,7 @@ package mivet.model;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import mivet.converter.TipoUsuarioConverter;
 import mivet.enums.Rol;
 import mivet.enums.TipoUsuario;
 
@@ -26,8 +27,8 @@ public class Usuario {
     @Column(nullable = false)
     private String contrasena;
 
+    @Convert(converter = TipoUsuarioConverter.class)
     @Column(name = "tipo_usuario")
-    @Enumerated(EnumType.STRING)
     private TipoUsuario tipoUsuario = TipoUsuario.privado;
 
     @Enumerated(EnumType.STRING)
