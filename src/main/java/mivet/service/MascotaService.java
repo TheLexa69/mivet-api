@@ -42,4 +42,8 @@ public class MascotaService {
         return mascotaRepository.save(mascota);
     }
 
+    public void eliminar(Long id) {
+        mascotaRepository.deleteById(id);
+    }
+
 }

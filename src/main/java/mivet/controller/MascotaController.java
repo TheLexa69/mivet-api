@@ -49,6 +49,32 @@ public class MascotaController {
         }
     }
 
+    @DeleteMapping("/mascotas/{id}")
+    public ResponseEntity<?> eliminarMascota(@RequestHeader("Authorization") String token,
+                                             @PathVariable Long id) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+
+        Optional<Mascota> optionalMascota = mascotaService.findById(id);
+        if (optionalMascota.isEmpty()) {
+            return ResponseEntity.status(404).body("Mascota no encontrada");
+        }
+
+        Mascota mascota = optionalMascota.get();
+
+        if (!mascota.getUsuario().getId().equals(idUsuario.intValue())) {
+            return ResponseEntity.status(403).body("No tienes permiso para eliminar esta mascota");
+        }
+
+        mascotaService.eliminar(id);
+
+        return ResponseEntity.ok("Mascota eliminada correctamente");
+    }
+
+
     private void validarTipoUsuario(String token) {
         if (!JwtUtil.isTokenValid(token)) {
             throw new RuntimeException("Token expirado o inválido");

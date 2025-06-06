@@ -1,9 +1,13 @@
 package mivet.controller;
 
+import mivet.dto.CambioContrasenaDTO;
+import mivet.dto.CitaDTO;
 import mivet.dto.MascotaDTO;
 import mivet.dto.UsuarioDTO;
+import mivet.model.Cita;
 import mivet.model.Mascota;
 import mivet.model.Usuario;
+import mivet.service.CitaService;
 import mivet.service.MascotaService;
 import mivet.service.UsuarioService;
 import mivet.util.JwtUtil;
@@ -20,11 +24,14 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
     private final MascotaService mascotaService;
+    private final CitaService citaService;
 
     @Autowired
-    public UsuarioController(UsuarioService usuarioService, MascotaService mascotaService) {
+    public UsuarioController(UsuarioService usuarioService, MascotaService mascotaService,
+                             CitaService citaService) {
         this.usuarioService = usuarioService;
         this.mascotaService = mascotaService;
+        this.citaService = citaService;
     }
 
     // Aqui iran:
@@ -32,13 +39,15 @@ public class UsuarioController {
     // ✔ - GET /mascotas
     // ✔ - PUT /mascotas/{id}
     // ✔ - POST /mascotas CONTROLAR TIPO MASCOTA EN MINUSCULO
-    // - GET /citas
-    // - POST /citas
+    // ✔ - GET /citas
+    // ✔ - PUT /citas/{id}
+    // ✔ - DELETE /citas/{id}
+    // ✔ - POST /citas
     // - GASTOS
-    // AJUSTES
+    // ---------------- AJUSTES
     // ✔ - GET /perfil
     // ✔ - PUT /perfil
-    // - PUT /cambiar-contrasena
+    // ✔ - PUT /cambiar-contrasena -> antigua nueva
     // - GET/PUT /notificaciones
 
 
@@ -171,6 +180,126 @@ public class UsuarioController {
 
         return ResponseEntity.ok("Mascota registrada correctamente");
     }
+
+    @GetMapping("/citas")
+    public ResponseEntity<List<Cita>> obtenerCitasDelUsuario(@RequestHeader("Authorization") String token) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).build();
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+        List<Cita> citas = citaService.findByUsuarioId(idUsuario);
+        return ResponseEntity.ok(citas);
+    }
+
+    @PostMapping("/citas")
+    public ResponseEntity<?> crearCita(@RequestHeader("Authorization") String token,
+                                       @RequestBody CitaDTO dto) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+
+        Usuario usuario = usuarioService.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Mascota mascota = mascotaService.findById(dto.getIdMascota())
+                .orElseThrow(() -> new RuntimeException("Mascota no encontrada"));
+
+        if (!mascota.getUsuario().getId().equals(idUsuario.intValue())) {
+            return ResponseEntity.status(403).body("No tienes permiso para asignar esta mascota");
+        }
+
+        Cita cita = new Cita();
+        cita.setTipo(dto.getTipo().name());
+        cita.setFecha(dto.getFecha());
+        cita.setEmpresa(dto.getEmpresa());
+        cita.setUsuario(usuario);
+        cita.setMascota(mascota);
+
+        citaService.save(cita);
+
+        return ResponseEntity.ok("Cita creada correctamente");
+    }
+
+    @DeleteMapping("/citas/{id}")
+    public ResponseEntity<?> eliminarCita(@RequestHeader("Authorization") String token,
+                                          @PathVariable Long id) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+
+        Optional<Cita> optionalCita = citaService.findById(id);
+        if (optionalCita.isEmpty()) {
+            return ResponseEntity.status(404).body("Cita no encontrada");
+        }
+
+        Cita cita = optionalCita.get();
+
+        if (!cita.getUsuario().getId().equals(idUsuario.intValue())) {
+            return ResponseEntity.status(403).body("No tienes permiso para eliminar esta cita");
+        }
+
+        citaService.delete(id);
+        return ResponseEntity.ok("Cita eliminada correctamente");
+    }
+
+    @PutMapping("/citas/{id}")
+    public ResponseEntity<?> actualizarCita(@RequestHeader("Authorization") String token,
+                                            @PathVariable Long id,
+                                            @RequestBody CitaDTO dto) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+
+        Optional<Cita> optionalCita = citaService.findById(id);
+        if (optionalCita.isEmpty()) {
+            return ResponseEntity.status(404).body("Cita no encontrada");
+        }
+
+        Cita cita = optionalCita.get();
+
+        if (!cita.getUsuario().getId().equals(idUsuario.intValue())) {
+            return ResponseEntity.status(403).body("No tienes permiso para modificar esta cita");
+        }
+
+        // Actualizar campos si vienen
+        if (dto.getTipo() != null) cita.setTipo(dto.getTipo().name());
+        if (dto.getFecha() != null) cita.setFecha(dto.getFecha());
+        if (dto.getEmpresa() != null) cita.setEmpresa(dto.getEmpresa());
+
+        citaService.save(cita);
+
+        return ResponseEntity.ok("Cita actualizada correctamente");
+    }
+
+    @PutMapping("/cambiar-contrasena")
+    public ResponseEntity<?> cambiarContrasena(@RequestHeader("Authorization") String token,
+                                               @RequestBody CambioContrasenaDTO dto) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+
+        Usuario usuario = usuarioService.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!usuario.getContrasena().equals(dto.getActual())) {
+            return ResponseEntity.status(403).body("Contraseña actual incorrecta");
+        }
+
+        usuario.setContrasena(dto.getNueva());
+        usuarioService.save(usuario);
+
+        return ResponseEntity.ok("Contraseña actualizada correctamente");
+    }
+
 
     private void validarPrivado(String token) {
         if (!JwtUtil.isTokenValid(token)) {

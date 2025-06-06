@@ -1,6 +1,7 @@
 package mivet.dto;
 
 import lombok.Data;
+import mivet.enums.TipoCita;
 
 import java.time.LocalDateTime;
 
@@ -9,7 +10,7 @@ public class CitaDTO {
     private Long id;
     private Long idUsuario;
     private Long idMascota;
-    private String tipo;
+    private TipoCita tipo;
     private LocalDateTime fecha;
     private String empresa;
 
@@ -37,11 +38,11 @@ public class CitaDTO {
         this.idMascota = idMascota;
     }
 
-    public String getTipo() {
+    public TipoCita getTipo() {
         return tipo;
     }
 
-    public void setTipo(String tipo) {
+    public void setTipo(TipoCita tipo) {
         this.tipo = tipo;
     }
 

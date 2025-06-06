@@ -1,7 +1,7 @@
 package mivet.enums;
 
 public enum TipoCita {
-    VETERINARIA,
-    PELUQUERIA,
-    VACUNACION
+    veterinaria,
+    peluqueria,
+    vacunacion
 }
