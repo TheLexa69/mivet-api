@@ -1,6 +1,7 @@
 package mivet.dto;
 
 import lombok.Data;
+import mivet.enums.TipoGasto;
 
 import java.time.LocalDate;
 
@@ -11,6 +12,7 @@ public class GastoDTO {
     private String descripcion;
     private Double cantidad;
     private LocalDate fecha;
+    private TipoGasto tipo;
 
     public Long getId() {
         return id;
@@ -18,6 +20,14 @@ public class GastoDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public TipoGasto getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoGasto tipo) {
+        this.tipo = tipo;
     }
 
     public Long getIdMascota() {

@@ -3,6 +3,7 @@ package mivet.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import mivet.enums.TipoGasto;
 
 import java.time.LocalDate;
 
@@ -18,6 +19,16 @@ public class Gasto {
     private String descripcion;
     private Double cantidad;
     private LocalDate fecha;
+    @Enumerated(EnumType.STRING)
+    private TipoGasto tipo;
+
+    public TipoGasto getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoGasto tipo) {
+        this.tipo = tipo;
+    }
 
     public Mascota getMascota() {
         return mascota;
