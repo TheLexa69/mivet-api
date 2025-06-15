@@ -342,6 +342,7 @@ public class UsuarioController {
         gasto.setDescripcion(dto.getDescripcion());
         gasto.setCantidad(dto.getCantidad());
         gasto.setFecha(dto.getFecha());
+        gasto.setTipo(dto.getTipo());
         gasto.setMascota(mascota);
 
         gastoService.save(gasto);
