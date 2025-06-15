@@ -1,4 +1,3 @@
-// GastoRepository.java
 package mivet.repository;
 
 import mivet.model.Gasto;
