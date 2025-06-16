@@ -56,6 +56,8 @@ public class MascotaController {
             return ResponseEntity.status(401).body("Token inválido");
         }
 
+        validarTipoUsuario(token);
+
         Long idUsuario = JwtUtil.extractUserId(token);
 
         Optional<Mascota> optionalMascota = mascotaService.findById(id);
@@ -72,6 +74,29 @@ public class MascotaController {
         mascotaService.eliminar(id);
 
         return ResponseEntity.ok("Mascota eliminada correctamente");
+    }
+
+    @GetMapping("/adopcion")
+    public ResponseEntity<?> listarMascotasAdopcion(@RequestHeader("Authorization") String token) {
+        try {
+            if (!JwtUtil.isTokenValid(token)) {
+                return ResponseEntity.status(401).body("Token inválido");
+            }
+            validarTipoUsuario(token);
+
+
+            List<Mascota> mascotas = mascotaService.findAll();
+
+            List<Mascota> mascotasAdopcion = mascotas.stream()
+                    .filter(m -> m.getUsuario() != null &&
+                            m.getUsuario().getTipoUsuario() == TipoUsuario.protectora)
+                    .toList();
+
+            return ResponseEntity.ok(mascotasAdopcion);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error al procesar solicitud: " + e.getMessage());
+        }
     }
 
 

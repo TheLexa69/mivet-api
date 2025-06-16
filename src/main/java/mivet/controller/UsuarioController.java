@@ -1,4 +1,5 @@
 package mivet.controller;
+
 import mivet.dto.*;
 import mivet.enums.TipoGasto;
 import mivet.model.*;
@@ -50,7 +51,6 @@ public class UsuarioController {
         this.gastoService = gastoService;
         this.mensajeService = mensajeService;
     }
-
 
 
     // ------------------- PERFIL DE USUARIO ------------------- //
@@ -449,7 +449,9 @@ public class UsuarioController {
 
         Long idUsuario = JwtUtil.extractUserId(token);
         List<Mensaje> mensajes = mensajeService.findByUsuarioId(idUsuario);
-        return ResponseEntity.ok(mensajes);
+        List<MensajeDTO> mensajesDTO = toDTOList(mensajes);
+
+        return ResponseEntity.ok(mensajesDTO);
     }
 
     @PutMapping("/mensajes/{id}/leido")
@@ -476,6 +478,22 @@ public class UsuarioController {
         mensajeService.save(mensaje);
 
         return ResponseEntity.ok("Mensaje marcado como leído");
+    }
+
+
+    private MensajeDTO convertTo(Mensaje mensaje) {
+        MensajeDTO dto = new MensajeDTO();
+        dto.setId(mensaje.getId());
+        dto.setTitulo(mensaje.getTitulo());
+        dto.setCuerpo(mensaje.getCuerpo());
+        dto.setFechaEnvio(mensaje.getFechaEnvio());
+        dto.setLeido(mensaje.getLeido());
+        dto.setIdUsuario(mensaje.getUsuario() != null ? mensaje.getUsuario().getId().longValue() : null);
+        return dto;
+    }
+
+    private List<MensajeDTO> toDTOList(List<Mensaje> mensajes) {
+        return mensajes.stream().map(this::convertTo).toList();
     }
 
 
