@@ -121,7 +121,7 @@ public class AdopcionController {
         return switch (resultado) {
             case "not_found" -> ResponseEntity.status(404).body("Usuario o mascota no encontrados");
             case "not_protectora" -> ResponseEntity.badRequest().body("La mascota no pertenece a una protectora");
-            case "duplicate" -> ResponseEntity.badRequest().body("Ya has solicitado adoptar esta mascota");
+            case "duplicate" -> ResponseEntity.badRequest().body("Ya se ha solicitado adoptar esta mascota");
             case "ok" -> ResponseEntity.ok("Solicitud de adopción enviada correctamente");
             default -> ResponseEntity.status(500).body("Error inesperado");
         };

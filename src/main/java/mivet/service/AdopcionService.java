@@ -59,10 +59,15 @@ public class AdopcionService {
             return "not_protectora";
         }
 
-        boolean yaSolicitada = adopcionRepository.existsByMascotaAndUsuario(mascota, usuario);
-        if (yaSolicitada) {
+//        boolean yaSolicitada = adopcionRepository.existsByMascotaAndUsuario(mascota, usuario);
+//        if (yaSolicitada) {
+//            return "duplicate";
+//        }
+        boolean pendiente = adopcionRepository.existsByMascotaAndUsuarioAndEstado(mascota, usuario, EstadoAdopcion.pendiente);
+        if (pendiente) {
             return "duplicate";
         }
+
 
         Adopcion adopcion = new Adopcion();
         adopcion.setMascota(mascota);

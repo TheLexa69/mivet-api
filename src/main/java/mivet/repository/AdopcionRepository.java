@@ -11,4 +11,6 @@ import java.util.List;
 public interface AdopcionRepository extends JpaRepository<Adopcion, Long> {
     List<Adopcion> findByEstado(EstadoAdopcion estado);
     boolean existsByMascotaAndUsuario(Mascota mascota, Usuario usuario);
+    boolean existsByMascotaAndUsuarioAndEstado(Mascota mascota, Usuario usuario, EstadoAdopcion estado);
+
 }
