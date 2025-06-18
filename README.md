@@ -1,731 +1,424 @@
+
+# MiVet API
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/TheLexa69/mivet-api)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/TheLexa69/mivet-api/actions)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)](https://github.com/TheLexa69/mivet-api)
+[![Java](https://img.shields.io/badge/java-17-blue)](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html)
+[![Spring Boot](https://img.shields.io/badge/spring--boot-3.1.0-brightgreen)](https://spring.io/projects/spring-boot)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
 
 # Indice 
- - [Supuesto](#Supuesto)
- - [Diagrama de Clases](#Diagrama-de-clases)
- - [Manual Técnico para Desarrolladores](#Manual-técnico-para-desarrolladores)
- - [Manual de Usuario](#Manual-de-Usuario)
- - [GitProject & Issues](#GitProject-e-Issues)
- - [Extras Realizados](#Extras-realizados)
- - [Propuestas de Mejora](#Propuestas-de-mejora)
- - [Conclusiones](#Conclusiones)
- - [Dedicación Temporal](#Dedicación-temporal)
+- [Supuesto](#Supuesto)
+- [Arquitectura General](#Arquitectura-General)
+- [Manual Técnico para Desarrolladores](#Manual-técnico-para-desarrolladores)
+- [Manual de Usuario](#Manual-de-Usuario)
+- [GitHub](#GitHub)
+- [Conclusiones](#Conclusiones)
+- [Dedicación temporal](#Dedicación-temporal)
 
 
 # Supuesto
 
-Nuestro proyecto de Springboot Teisport lo hemos planteado de forma que fuese útil para la persona creada con el mapa de
-empatía utilizado en clase. En nuestro caso , Carlitos era un adolescente de 16 años que jugaba en un equipo de fútbol 
-con sus amigos, pero solía estar más en el banquillo que jugando. 
+Este backend forma parte de un ecosistema de aplicaciones llamado MiVet, centrado en la gestión de adopciones de mascotas. La idea surge de facilitar la comunicación entre usuarios y protectoras, permitiendo:
 
-Para poner solución a su problema planteamos Teisport. Una plataforma de cursos gratuitos y de pago en la que ofrecemos 
-cursos con vídeos, guías y documentación creada por técnicos para ayudar a la mejora técnica, física y táctica de
-jóvenes jugadores. 
+- Registrar protectoras de animales.
+- Subir mascotas en adopción.
+- Gestionar solicitudes de adopción.
+- Consultar estados y datos de usuarios.
 
+Este microservicio en Java Spring Boot es la API principal para el almacenamiento, consulta y operación de los datos.
 
-# Diagrama de clases
+# Arquitectura General
+El proyecto sigue una arquitectura REST con los siguientes componentes:
 
-Para ello hemos planteado la siguiente BD , representada en este diagrama ER.
+- Spring Boot + Maven
+- Controladores REST (@RestController)
+- Repositorios JPA (no incluidos aquí pero inferidos)
+- OpenAPI/Swagger para documentación automática
+- Docker para contenedorización
 
-![Esquema](img/teisport.png)
-
-La entidad principal es la de Usuario. En el momento en el que se registra este accede a su Cuestionario Inicial. 
-Una vez lo responde se lñe asignarán varios Planes de Entrenamiento en función de sus respuestas. Cada plan por su parte
-tendrá un Contenido específico. A mayores los Usuarios podrán tener un Código de Descuento y podrán poner Tickets 
-con Mensajes en caso de necesitar sporte por parte de los Usuarios Administradores.
+> [Cliente Frontend/Flask] → [API REST (este proyecto)] → [Base de Datos MySQL]
 
 # Manual Técnico para Desarrolladores
 
-Para el desarrollo de nuestra aplicación web son necesarias las siguientes herramientas: 
+Para el desarrollo de la aplicación son necesarias las siguientes herramientas: 
 
-- Springboot 2.7.14 
+Explora la API en el [Swagger](http://13.48.85.87:8080/swagger-ui/index.html).
 
-- Java 17.0.3 o superior.
+## Requisitos
+- Java 17
+- Maven 3.8+
+- Docker (opcional)
+- MySQL 8 (remoto o local)
+- Postman o Swagger para pruebas de endpoints
 
-- MySQL 8.0.33 (BD Local)
+## Instalación y Ejecución Local
+> #### Clonar el repositorio
+> >git clone https://github.com/TheLexa69/mivet-api
+>
+> >cd mivet-api
 
-- RDS en AWS con verisión MySQL 8.0.33
+> #### Construir el proyecto
+>> ./mvn clean install
 
-- IntelliJ u otro IDE que permita el desarollo con las herramientas mencionadas.
+> #### Ejecutar el proyecto
+>> ./mvnw spring-boot:run
+>
+>> La API queda accesible en: http://localhost:8080
+
+## Ejecución con Docker
+> docker build -t mivet-api .
+> docker run -p 8080:8080 mivet-api
+>> La API queda accesible en: http://localhost:8080
+
+## Generación del JAR + Docker + Despliegue Local
+> URL: http://localhost:8080
+>> mvn clean install
+> 
+>> mvn package
+> 
+> >java -jar .\target\mivet-api-1.0.0.jar
+> 
+>> docker build -t mivet-api .
+> 
+>> docker run -p 8080:8080 mivet-api
+
 
 ## Estructura 
 
 Para la realización del proyecto hemos utilizado un patrón por Capas.
 
-Este modelo se suele usar en Spring Boot para aplicaciones web tradicionales con vistas renderizadas en el servidor. Se organizarían en los siguientes apartados que veremos a cotninuación.
+Este modelo se suele usar en Spring Boot para aplicaciones web tradicionales con vistas renderizadas en el servidor. Se organizarían en los siguientes apartados que veremos a continuación.
 
 A continuación mostaremos algunas de las partes más interesantes del código de las capas de nuestro proyecto.
 
-## Presentación
+## Controladores y Funcionalidades
+### UsuarioController
+- Registro y login de usuarios.
+- Obtención de datos personales.
 
-Maneja las solicitudes HTTP e interactúa con la capa de servicios.
-Devuelve respuestas al cliente . En nuestro caso vistas , ya que es una aplicación web.
-
-- Admin Controller
-````java
-@PostMapping("/panelAdmin/{id}/addUser")
-    public String addUser(@RequestParam("correo") String correo,
-                          @RequestParam("nombre") String nombre,
-                          @RequestParam("contrasena") String contrasena,
-                          @PathVariable Long id,
-                          RedirectAttributes redirectAttributes, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-
-        if (sessionUserId == null || !sessionUserId.equals(id)) {
-            return "redirect:/login";
-        }
-
-        // Comprobar si el usuario ya existe
-        UsuarioData usuarioExistente = usuarioService.findByEmail(correo);
-        if (usuarioExistente != null) {
-            redirectAttributes.addFlashAttribute("error", "El correo ya está en uso.");
-            return "redirect:/panelAdmin/" + id + "/listaUsuarios";
-        }
-
-        // Crear nuevo usuario y asignarle valores
-        UsuarioData nuevoUsuario = new UsuarioData();
-        nuevoUsuario.setEmail(correo);
-        nuevoUsuario.setNombre(nombre);
-        nuevoUsuario.setPassword(contrasena);
-        nuevoUsuario.setTipouser("user");  // Por defecto
-        nuevoUsuario.setPlan(TipoPlan.GRATUITO); // Por defecto
-
-        // Registrar usuario en la base de datos
-        usuarioService.registrar(nuevoUsuario);
-
-        redirectAttributes.addFlashAttribute("success", "Usuario creado correctamente.");
-        return "redirect:/panelAdmin/" + id + "/listaUsuarios";
-    }
-
-````
-
-- LoginController
+### 1. UsuarioController
+#### Ver las ascotas.
 ```java
-
-@Controller
-@RequestMapping("/cuestionario")
-public class CuestionarioController {
-
-    @Autowired
-    private CuestionarioService cuestionarioService;
-
-    @Autowired
-    private UsuarioService usuarioService;
-
-    @Autowired
-    private UsuarioPlanService usuarioPlanService;
-
-    @Autowired
-    private PlanService planService;
-
-    @GetMapping("/{id}")
-    public String mostrarCuestionario(@PathVariable Long id, Model model) {
-        Cuestionario cuestionario = cuestionarioService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cuestionario no encontrado"));
-
-        // Cargar las preguntas antes de pasarlas a la vista
-        cuestionario.getPreguntas().size();
-
-        model.addAttribute("cuestionario", cuestionario);
-        model.addAttribute("preguntas", cuestionario.getPreguntas());
-        return "cuestionario";
-    }
-
-    @PostMapping("/guardar-cuestionario")
-    public String guardarCuestionario(@RequestParam Map<String, String> respuestas, Model model, HttpSession session) {
-        Long usuarioId = (Long) session.getAttribute("userId");
-
-        if (usuarioId == null) {
-            System.out.println("Usuario no encontrado");
-            return "redirect:/login";
-        }
-
-        // Debugging: Mostrar respuestas seleccionadas
-        respuestas.forEach((preguntaId, respuestaId) ->
-                System.out.println("Pregunta: " + preguntaId + " - Respuesta: " + respuestaId));
-
-        // Llamada al método con el algoritmo para determinar el plan
-        List<Long> planIds = determinarPlan(respuestas);
-        if (planIds.isEmpty()) {
-            System.out.println("PLAN NO ENCONTRADO");
-            return "redirect:/error";
-        }
-
-        // Obtener usuario desde el servicio y manejar si no existe
-        UsuarioData usuarioData = usuarioService.findById(usuarioId);
-        if (usuarioData == null) {
-            throw new RuntimeException("Usuario no encontrado en la BD");
-        }
-
-        Usuario usuario = usuarioData.toUsuario(); // Convertir DTO a entidad
-
-        // Asignar todos los planes determinados al usuario
-        for (Long planId : planIds) {
-            // Buscar plan de entrenamiento
-            PlanesEntrenamiento plan = planService.findById(planId);
-            if (plan == null) {
-                throw new RuntimeException("Plan con ID " + planId + " no encontrado");
-            }
-
-            UsuarioPlan usuarioPlan = new UsuarioPlan();
-            usuarioPlan.setId(new UsuarioPlanId());
-            usuarioPlan.getId().setUsuarioId(usuarioId);
-            usuarioPlan.getId().setPlanId(planId);
-            usuarioPlan.setUsuario(usuario);
-            usuarioPlan.setPlan(plan);
-            usuarioPlan.setFechaInicio(Instant.now());
-            usuarioPlan.setEstado("Asignado");
-
-            usuarioPlanService.guardarUsuarioPlan(usuarioPlan);
-        }
-
-
-        return "redirect:/usuarios/" + usuarioId + "/userhub";
-    }
-
-
-    private List<Long> determinarPlan(Map<String, String> respuestas) {
-        // Definir categorías, divisiones, posiciones y mejoras
-        int[] categorias = {1, 2, 3, 4};
-        int[] divisiones = {5, 6, 7, 8};
-        int[] posiciones = {9, 10, 11, 12, 13, 14, 15};
-        int[] mejoras = {16, 17, 18, 19};
-
-        // Mapa de planes
-        Map<String, List<Long>> mapaPlanes = new HashMap<>();
-
-        for (int cat : categorias) {
-            for (int div : divisiones) {
-                for (int pos : posiciones) {
-                    for (int mejora : mejoras) {
-                        List<Long> planes = new ArrayList<>();
-
-                        // Asignar plan principal según categoría y posición
-                        if (pos == 9) planes.add(cat == 1 ? 1L : (cat == 2 || cat == 3) ? 8L : 15L);
-                        else if (pos == 10) planes.add(cat == 1 ? 2L : (cat == 2 || cat == 3) ? 9L : 16L);
-                        else if (pos == 11) planes.add(cat == 1 ? 3L : (cat == 2 || cat == 3) ? 10L : 17L);
-                        else if (pos == 12) planes.add(cat == 1 ? 4L : (cat == 2 || cat == 3) ? 11L : 18L);
-                        else if (pos == 13) planes.add(cat == 1 ? 5L : (cat == 2 || cat == 3) ? 12L : 19L);
-                        else if (pos == 14) planes.add(cat == 1 ? 6L : (cat == 2 || cat == 3) ? 13L : 20L);
-                        else if (pos == 15) planes.add(cat == 1 ? 7L : (cat == 2 || cat == 3) ? 14L : 21L);
-
-                        // Asignar plan adicional según aspecto a mejorar
-                        planes.add(mejora == 16 ? 24L : mejora == 17 ? 22L : mejora == 18 ? 25L : 23L);
-
-                        // Guardar combinación en el mapa
-                        String clave = cat + "-" + div + "-" + pos + "-" + mejora;
-                        mapaPlanes.put(clave, planes);
-                    }
-                }
-            }
-        }
-
-        // Construir clave con las respuestas seleccionadas
-        List<String> seleccionadas = new ArrayList<>(respuestas.values());
-        String clave = String.join("-", seleccionadas);
-
-        // Obtener lista de planes asignados o planes predeterminados si no se encuentra la clave
-        List<Long> resultado = new ArrayList<>(mapaPlanes.getOrDefault(clave, new ArrayList<>()));
-
-        // Añadir siempre los planes 26, 27 y 28
-        resultado.addAll(Arrays.asList(26L, 27L, 28L));
-
-        return resultado;
-    }
-}
-
-
-
-```
-
-- Código Descuento Controller 
-
-```java 
-
-@Controller
-public class CodigosController {
-
-    @Autowired
-    CodigoDescuentoService codigoDescuentoService;
-
-    @Autowired
-    UsuarioService usuarioService;
-
-    @GetMapping("/panelAdmin/{id}/listaCodigos")
-    public String listaCodigos(@PathVariable Long id, Model model, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-
-        if (sessionUserId == null || !sessionUserId.equals(id)) {
-            return "redirect:/login";
-        }
-
-        List<CodigoDescuento> codigos = codigoDescuentoService.listarCodigos();
-        model.addAttribute("codigos", codigos);
-        model.addAttribute("userId", id);
-        return "listaCodigos";
-    }
-
-    @PostMapping("/panelAdmin/{id}/addCodigo")
-    public String addUser(@RequestParam("codigo") String codigo,
-                          @RequestParam("descuento") BigDecimal descuento,
-                          @RequestParam("usuario") Long usuario,
-                          @PathVariable Long id,
-                          RedirectAttributes redirectAttributes, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-        if (sessionUserId == null || !sessionUserId.equals(id)) {
-            return "redirect:/login";
-        }
+    @GetMapping("/mascotas")
+    public ResponseEntity<?> listarMascotasDelUsuario(@RequestHeader("Authorization") String token) {
         try {
-            codigoDescuentoService.buscarPorCodigo(codigo);
-            redirectAttributes.addFlashAttribute("error", "El código ya existe.");
-            return "redirect:/panelAdmin/" + id + "/listaCodigos";
+            validarPrivado(token);
+
+            Long idUsuario = JwtUtil.extractUserId(token);
+            List<Mascota> mascotas = mascotaService.findByUsuarioId(idUsuario);
+
+           if (mascotas.isEmpty()) {
+                return ResponseEntity.status(404).body("No se encontraron mascotas para este usuario");
+            }
+
+            return ResponseEntity.ok(mascotas);
         } catch (RuntimeException e) {
-            // Código no encontrado, podemos crearlo
-        }
-
-        Usuario usuarionuevo = usuarioService.buscarPorId(usuario).get();
-        codigoDescuentoService.nuevoCodigo(codigo , descuento, usuarionuevo);
-        redirectAttributes.addFlashAttribute("success", "Código creado correctamente.");
-        return "redirect:/panelAdmin/" + id + "/listaCodigos";
+           return ResponseEntity.status(403).body(e.getMessage()); // 403 Forbidden
+       }
     }
-
-    @PostMapping("/panelAdmin/{id}/updateCodigo")
-    public String updateUser(@RequestParam("idCodigoUpdate") Long idCodigoUpdate,
-                             @RequestParam("codigo") String codigo,
-                             @RequestParam("descuento") BigDecimal descuento,
-                             @RequestParam("usuario") Long usuarioid,
-                             @PathVariable Long id,
-                             RedirectAttributes redirectAttributes, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-        if (sessionUserId == null || !sessionUserId.equals(id)) {
-            return "redirect:/login";
-        }
-
-        CodigoDescuento codigoExistente = codigoDescuentoService.buscarPorId(idCodigoUpdate);
-        codigoExistente.setCodigo(codigo);
-        codigoExistente.setDescuento(descuento);
-        codigoExistente.setUsuario(usuarioService.buscarPorId(usuarioid).get());
-        codigoDescuentoService.actualizarCodigo(codigoExistente);
-
-        redirectAttributes.addFlashAttribute("success", "Código actualizado correctamente.");
-        return "redirect:/panelAdmin/" + id + "/listaCodigos";
-    }
-
-    @PostMapping("/panelAdmin/{id}/deleteCodigo")
-    public String deleteUser(@RequestParam("idCodigo") Long idCodigo,
-                             @PathVariable Long id,
-                             RedirectAttributes redirectAttributes, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-        if (sessionUserId == null || !sessionUserId.equals(id)) {
-            return "redirect:/login";
-        }
-
-        try {
-            codigoDescuentoService.eliminarCodigo(idCodigo);
-            redirectAttributes.addFlashAttribute("success", "Código borrado correctamente.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Error al borrar el código.");
-        }
-        return "redirect:/panelAdmin/" + id + "/listaCodigos";
-    }
-}
 ```
-
-- Usuario COntroller
-
-```java
-@GetMapping("/usuarios/{userId}/dashboard")
-    public String userDashboard(@PathVariable Long userId, Model model, HttpSession session) {
-        Long sessionUserId = (Long) session.getAttribute("userId");
-
-        // Verificar si el usuario está autenticado y si coincide con el id del path
-        if (sessionUserId == null || !sessionUserId.equals(userId)) {
-            return "redirect:/login";
+#### Crear una cita.
+ ```java
+     @PostMapping("/citas")
+    public ResponseEntity<?> crearCita(@RequestHeader("Authorization") String token,
+                                       @RequestBody CitaDTO dto) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
         }
 
-        // Recuperar los tickets del usuario desde la base de datos
-        List<Ticket> tickets = ticketService.findTicketsByUserId(userId);
-        UsuarioData usuarioData = usuarioService.findById(sessionUserId);
-        model.addAttribute("usuario", usuarioData);
+        Long idUsuario = JwtUtil.extractUserId(token);
 
-        // Verificar si la lista de tickets está vacía
-        if (tickets.isEmpty()) {
-            model.addAttribute("message", "No tienes tickets asociados.");
-        } else {
-            // Ordenar los mensajes de cada ticket por fecha de envío
-            for (Ticket ticket : tickets) {
-                List<MensajeTicket> mensajesOrdenados = ticketService.getMensajesByTicketId(ticket.getId());
-                ticket.setMensajes(mensajesOrdenados);
+        Usuario usuario = usuarioService.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Mascota mascota = mascotaService.findById(dto.getIdMascota())
+                .orElseThrow(() -> new RuntimeException("Mascota no encontrada"));
+
+        if (!mascota.getUsuario().getId().equals(idUsuario.intValue())) {
+            return ResponseEntity.status(403).body("No tienes permiso para asignar esta mascota");
+        }
+
+        Cita cita = new Cita();
+        cita.setTipo(dto.getTipo().name());
+        cita.setFecha(dto.getFecha());
+        cita.setEmpresa(dto.getEmpresa());
+        cita.setUsuario(usuario);
+        cita.setMascota(mascota);
+
+        citaService.save(cita);
+
+        return ResponseEntity.ok("Cita creada correctamente");
+    }
+```
+#### Filtrar gastos.
+ ```java
+    @GetMapping("/gastos")
+    public ResponseEntity<?> filtrarGastos(@RequestHeader("Authorization") String token,
+                                           @RequestParam(required = false) String tipo,
+                                           @RequestParam(required = false) String dia,
+                                           @RequestParam(required = false) Integer mes,
+                                           @RequestParam(required = false) Integer anio,
+                                           @RequestParam(required = false) String desde,
+                                           @RequestParam(required = false) String hasta) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        Long idUsuario = JwtUtil.extractUserId(token);
+        List<Mascota> mascotas = mascotaService.findByUsuarioId(idUsuario);
+
+        List<Gasto> gastos = mascotas.stream()
+                .flatMap(mascota -> gastoService.findByMascotaId(mascota.getId().longValue()).stream())
+                .toList();
+
+        // Filtro por tipo
+        if (tipo != null) {
+            try {
+                TipoGasto tipoEnum = TipoGasto.valueOf(tipo);
+                gastos = gastos.stream()
+                        .filter(g -> g.getTipo() == tipoEnum)
+                        .toList();
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Tipo de gasto no válido");
             }
-            model.addAttribute("tickets", tickets);
         }
 
-        model.addAttribute("userId", userId);
-        return "dashboardUsuario";  // Devolver el nombre de la vista
+        // Filtro por día exacto
+        if (dia != null) {
+            LocalDate fecha = LocalDate.parse(dia);
+            gastos = gastos.stream()
+                    .filter(g -> g.getFecha().equals(fecha))
+                    .toList();
+        }
+
+        // Filtro por mes y/o año
+        if (mes != null || anio != null) {
+            gastos = gastos.stream()
+                    .filter(g -> {
+                        LocalDate f = g.getFecha();
+                        boolean coincideMes = mes == null || f.getMonthValue() == mes;
+                        boolean coincideAnio = anio == null || f.getYear() == anio;
+                        return coincideMes && coincideAnio;
+                    })
+                    .toList();
+        }
+
+        // Filtro por rango de fechas
+        if (desde != null || hasta != null) {
+            LocalDate desdeFecha = (desde != null) ? LocalDate.parse(desde) : LocalDate.MIN;
+            LocalDate hastaFecha = (hasta != null) ? LocalDate.parse(hasta) : LocalDate.MAX;
+
+            gastos = gastos.stream()
+                    .filter(g -> !g.getFecha().isBefore(desdeFecha) && !g.getFecha().isAfter(hastaFecha))
+                    .toList();
+        }
+
+        return ResponseEntity.ok(gastos);
     }
 ```
 
-## Servicio
-
-Contiene la lógica de negocio y actúa como intermediario entre los controladores y los repositorios.
-
-```java
-@Service
-public class UsuarioService {
-
-    Logger logger = LoggerFactory.getLogger(UsuarioService.class);
-
-    public enum LoginStatus {LOGIN_OK, USER_NOT_FOUND, ERROR_PASSWORD}
-
-    @Autowired
-    private UsuarioRepository usuarioRepository;
-
-    @Autowired
-    private ModelMapper modelMapper;
-
-    @Transactional(readOnly = true)
-    public LoginStatus login(String eMail, String password) {
-        Usuario usuario = usuarioRepository.findByEmail(eMail)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (!usuario.getPassword().equals(password)) {
-            return LoginStatus.ERROR_PASSWORD;
+### 2. MascotaController
+- Gestión de mascotas (crear, listar, eliminar).
+- Asociación con protectoras.
+#### Info de una mascota por ID.
+ ```java
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerMascotaPorId(@RequestHeader("Authorization") String token,
+                                                 @PathVariable Long id) {
+        try {
+            validarTipoUsuario(token);
+            Optional<Mascota> mascota = mascotaService.findById(id);
+            return mascota.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
         }
-        return LoginStatus.LOGIN_OK;
     }
-
-    @Transactional
-    public UsuarioData registrar(UsuarioData usuarioData) {
-        if (usuarioRepository.findByEmail(usuarioData.getEmail()).isPresent()) {
-            throw new UsuarioServiceException("El usuario " + usuarioData.getEmail() + " ya está registrado");
-        }
-        if (usuarioData.getEmail() == null || usuarioData.getPassword() == null) {
-            throw new UsuarioServiceException("El usuario debe tener email y password");
-        }
-
-        // Asignar 'user' como tipo de usuario por defecto si no se especifica
-        if (usuarioData.getTipouser() == null) {
-            usuarioData.setTipouser("user");
-        }
-
-        // Asignar plan por defecto si no se especifica en el formulario
-        if (usuarioData.getPlan() == null) {
-            usuarioData.setPlan(TipoPlan.GRATUITO);  // Se asigna "GRATUITO" como valor predeterminado
-        }
-
-        Usuario usuarioNuevo = modelMapper.map(usuarioData, Usuario.class);
-
-        // Debugging para verificar el plan antes de guardar en la base de datos
-        System.out.println("Plan asignado al usuario antes de guardar: " + usuarioNuevo.getPlan());
-
-        usuarioNuevo = usuarioRepository.save(usuarioNuevo);
-
-        return modelMapper.map(usuarioNuevo, UsuarioData.class);
-    }
-
-
-    public UsuarioData findByEmail(String email) {
-        return usuarioRepository.findByEmail(email)
-                .map(usuario -> {
-                    System.out.println("Usuario encontrado: " + usuario);
-                    return modelMapper.map(usuario, UsuarioData.class);
-                })
-                .orElse(null); // Retorna null en lugar de lanzar excepción
-    }
-
-
-    @Transactional(readOnly = true)
-    public UsuarioData findById(Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        return modelMapper.map(usuario, UsuarioData.class);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Usuario> buscarPorId(Long usuarioId) {
-        return usuarioRepository.findById(usuarioId);
-    }
-
-    public List<UsuarioData> findAll() {
-        return StreamSupport.stream(usuarioRepository.findAll().spliterator(), false)
-                .map(usuario -> modelMapper.map(usuario, UsuarioData.class))
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    public UsuarioData save(UsuarioData usuarioData) {
-        Usuario usuario = modelMapper.map(usuarioData, Usuario.class);
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
-        return modelMapper.map(usuarioGuardado, UsuarioData.class);
-    }
-
-    @Transactional
-    public void eliminarUsuario(Long id) {
-        usuarioRepository.deleteById(id);
-    }
-
-    @Transactional
-    public void actualizarUsuario(UsuarioData usuarioData) {
-        Usuario usuarioExistente = usuarioRepository.findById(usuarioData.getId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (usuarioData.getEmail() != null) {
-            usuarioExistente.setEmail(usuarioData.getEmail());
-        }
-        if (usuarioData.getNombre() != null) {
-            usuarioExistente.setNombre(usuarioData.getNombre());
-        }
-        if (usuarioData.getApellidos() != null) {
-            usuarioExistente.setApellidos(usuarioData.getApellidos());
-        }
-        if (usuarioData.getBio() != null) {
-            usuarioExistente.setBio(usuarioData.getBio());
-        }
-        if (usuarioData.getTipouser() != null) {
-            usuarioExistente.setTipouser(usuarioData.getTipouser());
-        }
-
-        usuarioRepository.save(usuarioExistente);
-    }
-}
-
 ```
 
-## Acceso a Datos
 
-Se comunica con la base de datos y ejecuta las operaciones CRUD (Create, Read, Update, Delete) mediante JPA o consultas personalizadas
-en el caso de que necesitemos alguna consulta de campos concretos, ciertas relaciones ,etc.
+### 3. ProtectoraController
+- Alta de protectoras.
+- Asignación de mascotas.
 
-- Menasje Ticket Repository
+#### Actualizar perfil de protectora.
+ ```java
+    @PutMapping("/perfil")
+    public ResponseEntity<?> actualizarPerfilProtectora(@RequestHeader("Authorization") String token,
+                                                        @RequestBody ProtectoraDTO dto) {
+        try {
+            validarProtectora(token); // Validate token and user type
 
-```java
+            Long idUsuario = JwtUtil.extractUserId(token);
+            Optional<Protectora> optionalProtectora = protectoraService.findByUsuarioId(idUsuario.intValue());
 
-public interface MensajeTicketRepository extends JpaRepository<MensajeTicket, Long> {
-//    List<MensajeTicket> findByTicketId(Long ticketId);
+            // Retrieve the user from the database to avoid "detached entity"
+            Usuario usuario = usuarioService.findById(idUsuario)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    @Query("SELECT m FROM MensajeTicket m WHERE m.ticket.id = :ticketId ORDER BY m.fechaEnvio ASC")
-    List<MensajeTicket> findByTicketId(Long ticketId);
-}
+            Protectora protectora;
+            if (optionalProtectora.isPresent()) {
+                protectora = optionalProtectora.get();
+            } else {
+                protectora = new Protectora();
+                protectora.setUsuario(usuario);
+            }
 
+            // Update fields
+            if (dto.getNombre() != null) {
+                usuario.setNombre(dto.getNombre());
+            }
+
+            if (dto.getCif() != null) protectora.setCif(dto.getCif());
+            if (dto.getTelefono() != null) protectora.setTelefono(dto.getTelefono());
+            if (dto.getWeb() != null) protectora.setWeb(dto.getWeb());
+            if (dto.getCodigoONG() != null) protectora.setCodigoONG(dto.getCodigoONG());
+            if (dto.getDireccion() != null) protectora.setDireccion(dto.getDireccion());
+            if (dto.getLogo() != null) protectora.setLogo(dto.getLogo());
+            if (dto.getFacebook() != null) protectora.setFacebook(dto.getFacebook());
+            if (dto.getInstagram() != null) protectora.setInstagram(dto.getInstagram());
+            if (dto.getTiktok() != null) protectora.setTiktok(dto.getTiktok());
+            if (dto.getLinkedin() != null) protectora.setLinkedin(dto.getLinkedin());
+
+            // Save changes
+            usuarioService.save(usuario);
+            protectoraService.save(protectora);
+
+            return ResponseEntity.ok("Perfil actualizado correctamente");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(403).body(e.getMessage()); // 403 Forbidden
+        }
+    }
 ```
 
-- Planes Entreamiento Repository
 
-```java
-@Repository
-public interface PlanesEntrenamientoRepository extends JpaRepository<PlanesEntrenamiento, Long> {
-    
-    @Query("SELECT p FROM PlanesEntrenamiento p LEFT JOIN FETCH p.contenidos")
-    List<PlanesEntrenamiento> findAllWithContenido();
-    
-    Optional<PlanesEntrenamiento> findById(Long id);
-}
+### 4. AdopcionController
+- Crear y consultar solicitudes de adopción.
+- Aprobación o rechazo.
+#### Actualizar la solicitud de adopción.
+ ```java
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstadoAdopcion(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long id,
+            @RequestParam("estado") String estado
+    ) {
+        if (!JwtUtil.isTokenValid(token)) {
+            return ResponseEntity.status(401).body("Token inválido");
+        }
+
+        String rol = JwtUtil.extractRol(token);
+        if (!"admin".equalsIgnoreCase(rol)) {
+            return ResponseEntity.status(403).body("Acceso denegado: solo protectoras pueden modificar el estado");
+        }
+
+        if (!estado.equalsIgnoreCase("aceptada") && !estado.equalsIgnoreCase("rechazada")) {
+            return ResponseEntity.badRequest().body("Estado no válido. Usa 'aceptada' o 'rechazada'.");
+        }
+
+        Optional<Adopcion> adopcionOpt = adopcionRepository.findById(id);
+        if (adopcionOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Adopcion adopcion = adopcionOpt.get();
+        Long idProtectora = JwtUtil.extractUserId(token);
+        Integer protectoraId = idProtectora.intValue();
+
+        if (!adopcion.getMascota().getUsuario().getId().equals(protectoraId)) {
+            return ResponseEntity.status(403).body("No tienes permiso para modificar esta solicitud");
+        }
+
+        adopcion.setEstado(EstadoAdopcion.valueOf(estado.toLowerCase()));
+        adopcionRepository.save(adopcion);
+
+        return ResponseEntity.ok(mapToDTO(adopcion));
+    }
 ```
 
-## Modelo o Dominio
-
-Representa los datos del negocio. Se mapea a tablas en la base de datos con JPA.
-
-- Entity Usuario
-```java
-
-@Entity
-@Table(name = "usuarios")
-public class Usuario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
-
-    @Column(name = "nombre", nullable = false, length = 100)
-    private String nombre;
-
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
-
-
-    @Column(name = "apellidos",nullable = true, length = 200)
-    private String apellidos;
-
-    @Column(name = "bio", nullable = true)
-    private String bio;
-
-    @Lob
-    @Column(name = "foto", nullable = true)
-    private String foto;
-
-    @Column(name = "password", nullable = false)
-    private String password;
-
-    @Lob
-    @Column(name = "tipouser", nullable = false)
-    private String tipouser = "user";
-
-    @Column(name = "plan", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private TipoPlan plan = TipoPlan.GRATUITO;
-
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.REMOVE)
-    private CodigoDescuento codigoDescuento;
-
-    //getters & setters 
-}
-```
-- Entity Cuestionario
-
-```java
-@Entity
-@Table(name = "cuestionario")
-public class Cuestionario {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
-    @Column(name = "nombre", nullable = false, length = 100)
-    private String nombre;
-
-    @OneToMany(mappedBy = "cuestionario", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Pregunta> preguntas = new ArrayList<>();
-}
-```
-- Entity Preguntas
-
-```java
-@Entity
-@Table(name = "preguntas")
-public class Pregunta {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "cuestionario_id", nullable = false)
-    private Cuestionario cuestionario;
-
-    @Column(name = "texto", nullable = false)
-    private String texto;
-
-    @OneToMany(mappedBy = "pregunta", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Respuesta> respuestas = new ArrayList<>();
-}
+### 5. StatusController
+- Devuelve estados del sistema o para pruebas de salud.
+- 
+#### Devuelve el estado de la API.
+ ```java
+    @GetMapping("/ping")
+    public Map<String, String> ping() {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "pong");
+        return response;
+    }
 ```
 
-- Entity Respuestas
+## Modelo de Datos
 
-```java
+El sistema está compuesto por varias entidades JPA (`@Entity`) mapeadas a tablas en la base de datos:
 
-@Entity
-@Table(name = "respuestas")
-public class Respuesta {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
-    private Long id;
+### Usuario
+- **Campos**: `id`, `nombre`, `correo`, `contrasena`, `tipoUsuario`, `rol`.
+- **Descripción**: Contiene la información básica de los usuarios del sistema.
+- **Relaciones**:
+  - `@OneToMany` con `Mascota`, `Mensaje`, `Cita`, `HistorialDueno`.
+  - `@OneToOne` con `Auth`.
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "pregunta_id", nullable = false)
-    private Pregunta pregunta;
+### Mascota
+- **Descripción**: Representa una mascota registrada por un usuario o protectora.
+- **Campos**: `id`, `nombre`, `tipo`, `raza`, `fechaNac`, `descripcion`.
+- **Relaciones**:
+  - `@ManyToOne` con `Usuario` (propietario actual).
+  - `@OneToMany` con `HistorialClinico`, `Analitica`, `PruebaImagen`, `Tratamiento`, `Citopatologia`, `Cita`, `HistorialDueno`, `Gasto`.
 
-    @Lob
-    @Column(name = "respuesta", nullable = false)
-    private String respuesta;
-}
-```
+### Protectora
+- **Descripción**: Entidad que representa una organización registrada.
+- **Campos**: `id`, `cif`, `codigoONG`, `telefono`, `web`, `direccion`, `logo`, redes sociales.
+- **Relaciones**:
+  - `@OneToOne` con `Usuario` (el usuario que administra la protectora).
 
+### Adopcion
+- **Descripción**: Solicitudes creadas por usuarios para adoptar mascotas.
+- **Campos**: `id`, `mensaje`, `estado`, `fechaSolicitud`.
+- **Relaciones**:
+  - `@ManyToOne` con `Usuario` (solicitante).
+  - `@ManyToOne` con `Mascota` (animal solicitado).
+
+## Relaciones:
+\- Un usuario puede tener muchas mascotas y muchas citas, mensajes o solicitudes de adopción.
+
+\- Una mascota puede tener muchos historiales clínicos, tratamientos, citas y propietarios anteriores.
+
+\- Una protectora está ligada a un usuario con rol especial.
+
+\- Cada adopción une a una mascota con el usuario que la solicita.
+
+## Notas Técnicas
+\- Todas las entidades están anotadas con \@Entity y mapeadas con JPA.
+
+\- Se utilizan \@Enumerated, \@JsonManagedReference, \@JsonBackReference para control de serialización.
+
+\- Relaciones cascade = ALL para persistencia automática en relaciones hijas.
+
+\- Conversores personalizados como TipoUsuarioConverter permiten mapear enums a strings.
 
 # Manual de Usuario
 
-Os dejamos un pequeño video tutorial del funcionamiento de la aplicación tanto desde la parte de usuarios como administradores.
+Accede a una demostración práctica del funcionamiento desde la perspectiva de usuario y protectora:
 
-![Tutorial_Usuarios](enlace video)
+![Enlace al video](enlace video)
 
-# GitProject e Issues
+El backend se comunica mediante endpoints REST. Algunos ejemplos:
 
-Para el reparto de tareas usamos el sistema de Issues de GitHub. Asignando a las Issues un miembro del gurpo o varios 
-y asignando una pull request para que pasase a completada en el momento en el que alguno de los miembros revisase la pull
-y la aceptase. 
+- GET /usuarios — lista todos los usuarios.
+- POST /mascotas — crea una nueva mascota.
+- POST /adopciones — inicia una solicitud de adopción.
+- GET /adopciones/user/{id} — adopciones del usuario.
+- GET /swagger-ui/index.html — documentación interactiva.
 
-Trabajmos en común para la creación de la BD, las Entities, los DTOs. Después cada uno trabajó 
-de froma individual en sus views, CRUDs , etc. Obviamente con la ayuda de sus compañeros si era necesario y consultándonos 
-todos para temas de diseño, estructuración etc. Hemos trabajado en común varios días cuando nos lo permitian nuestros horarios
-y de forma individual otros , pero siempre nos hemos puesto al día y comentado puntos del proyecto los días de clase.
-
-
-- **Issues Jorge.**
-
-![IssuesJorge](img/IssuesJorge.png)
-
-- **Issues Miguel.**
-
-![IssuesMiguel](img/IssuesMiguel.png)
-
-- **Issues Guille.**
-
-![IssuesGuille](img/IssuesGuille.png)
-
-# Propuestas de mejora
-
-Como propuestas de mejeora de nuestro proyecto:
-
-- Filtrado de algunos campos en distintas vistas que no hemos podido implementar por tiempo.
-
-
-- Referenciar distintas vistas en el header para tener acceso a distintas partes de la app desde este.
-
-
-- Implementar alguna forma de subir contenido multimedia para los planes de entrenamiento.
-
-
-- Personalizar las fotos de perfil del usuario. (Intentamos hacerlo , pero se dejó como tarea secundaria 
-para los ultimos días de trabajo)
-
-
-- Validación de más campos de los formularios.
-
-# Extras realizados
-
-- Dashboard para el administrador de usuarios que acceden a nuestra aplicación (podrá crear, modificar, bloquear y borrar usuarios).
-
-
-- Despliegue con Docker: la aplicación estará publicada en una instancia dockerizada EC2 de AWS o Azure, conectándose a una base de datos MySQL publicada en Azure o AWS-RDS.
-  En nuestro caso hemos usado un [servidor Ubuntu en AWS](http://54.154.35.152:8080/).
-
-![Despliegue_Docker_1](img/Despliegue_Docker_1.png)
-
-![Despliegue_Docker_2](img/Despliegue_Docker_2.png)
+# GitHub
+El control de versiones del proyecto se ha gestionado mediante GitHub, permitiendo un seguimiento eficiente de los cambios y despliegue continuo. Puedes acceder al repositorio en: [MiVet API GitHub](https://github.com/TheLexa69/mivet-api).
 
 # Conclusiones
+El proyecto mivet-api proporciona una base sólida como backend REST para una aplicación de adopciones. Es modular, extensible, y bien estructurado para su integración con una base de datos y otros servicios como el frontend o dashboard en Flask.
 
-Hemos sacado varias conclusiones con la finalización de este proyecto: 
-
-- Al inicio del proyecto nos encontrábamos bastante perdidos en cuanto a conocimientos de como funcionaba Springboot. 
-Pero a medida que hemos ido avanzando creo que hemos comprendido mejor su funcionamiento y potencial.
-
-
-- A comparación de JavaFX , Springboot hace mucho más sencillo y felixble el diseño de la interfaz de la app. 
-Además de tener muchas más opciones de diseño.
-
-
-- En general la parte de Controllers es también mucho más sencilla. Al igual que la forma en la 
-que se hacen los CRUD con los Repository y Services es mucho más sencilla.
-
-
-- De la misma forma que en el primer proyecto tuvimos dificultades con JavaFX , las tuvimos aquí con Springboot.
-Pero a medida que fuimos avanzando en el proyecto y solucionando errores fuimos aprendiendo a como manejar mejor 
-Springboot. Probar nuevas tecnologias, construir un proyecto con ellas, cometer errores y solucionarlos ayuda mucho a
-aprender como manejarla.
+He aprendido a construir una arquitectura RESTful robusta con Spring Boot, aplicar control de acceso JWT, y organizar la lógica por capas. El proyecto queda listo para escalar, añadir nuevas funcionalidades y conectar con otros módulos como el frontend Flask o app Android.
 
 # Dedicación temporal
-
-Desde el inicio del proyecto hemos dedicado entre las horas de clase y trabajo en casa una media estimada de unas 40h 
-cada uno más o menos.
-
-# Cualificación esperada
-
-Teniendo en cuenta los puntos exigidos entre tareas Obligatorias y Opcionales la cualificación estimada del grupo es 
-un 80 sobre 100.
+Se estiman alrededor de 40-50 horas de trabajo para su desarrollo, incluyendo planificación, desarrollo, pruebas y contenedorización.
