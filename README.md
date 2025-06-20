@@ -400,10 +400,6 @@ El sistema está compuesto por varias entidades JPA (`@Entity`) mapeadas a tabla
 
 # Manual de Usuario
 
-Accede a una demostración práctica del funcionamiento desde la perspectiva de usuario y protectora:
-
-![Enlace al video](enlace video)
-
 El backend se comunica mediante endpoints REST. Algunos ejemplos:
 
 - GET /usuarios — lista todos los usuarios.
